@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Hub & Sharing Tool</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Background Glow Blobs -->
+    <div class="glow-blob glow-1"></div>
+    <div class="glow-blob glow-2"></div>
+    <div class="glow-blob glow-3"></div>
+
+    <div class="app-container">
+        <!-- Sidebar / Tweet Composer Section (Sticky/Fixed on Desktop, Slide-over on Mobile) -->
+        <aside class="sidebar glass-panel">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-logo">
+                        <i data-lucide="database" class="logo-icon"></i>
+                    </div>
+                    <div>
+                        <h2>BQ Release Hub</h2>
+                        <span class="subtext">Google Cloud Intelligence</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tweet Composer Card -->
+            <div class="tweet-composer">
+                <div class="composer-header">
+                    <div class="composer-title-wrapper">
+                        <i data-lucide="twitter" class="x-icon"></i>
+                        <h3>Share to Twitter/X</h3>
+                    </div>
+                    <span class="badge badge-composer">Composer</span>
+                </div>
+                
+                <div class="composer-body">
+                    <p class="composer-instruction">Select any update from the feed to load it here and compose a tweet.</p>
+                    
+                    <div class="composer-input-wrapper disabled" id="composerInputWrapper">
+                        <textarea 
+                            id="tweetTextarea" 
+                            placeholder="Select an update to start composing..." 
+                            maxlength="500" 
+                            disabled
+                        ></textarea>
+                        <div class="composer-footer">
+                            <span id="charCount" class="char-count">0 / 280</span>
+                            <div class="hashtag-pills" id="hashtagPills">
+                                <span class="tag-pill active" data-tag="#BigQuery">#BigQuery</span>
+                                <span class="tag-pill active" data-tag="#GoogleCloud">#GoogleCloud</span>
+                                <span class="tag-pill" data-tag="#DataEngineering">#DataEng</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="composer-actions">
+                        <button class="btn btn-secondary" id="btnCopyTweet" disabled>
+                            <i data-lucide="copy"></i> Copy Text
+                        </button>
+                        <button class="btn btn-primary" id="btnSendTweet" disabled>
+                            <i data-lucide="send"></i> Post Tweet
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <p>Built with Flask &amp; Plain CSS/JS</p>
+                <div class="system-status">
+                    <span class="status-dot"></span>
+                    <span id="statusText">System Ready</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header Banner -->
+            <header class="content-header glass-panel">
+                <div class="header-main">
+                    <div>
+                        <span class="eyebrow">Real-time Feed Monitor</span>
+                        <h1>BigQuery Release Notes</h1>
+                        <p class="header-desc">Track, analyze, and share the latest capabilities, changes, and announcements for Google Cloud BigQuery.</p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="last-fetch-info">
+                            <span class="label">Last synced:</span>
+                            <span id="lastUpdated" class="value">Never</span>
+                        </div>
+                        <button id="btnRefresh" class="btn btn-refresh">
+                            <i data-lucide="rotate-cw" id="refreshIcon"></i>
+                            <span>Sync Feed</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Dashboard -->
+                <div class="stats-grid">
+                    <div class="stat-card" data-filter="all">
+                        <div class="stat-icon-wrapper"><i data-lucide="list"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-val" id="statTotal">0</span>
+                            <span class="stat-label">Total Updates</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" data-filter="feature">
+                        <div class="stat-icon-wrapper feat-icon"><i data-lucide="sparkles"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-val" id="statFeatures">0</span>
+                            <span class="stat-label">Features</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" data-filter="change">
+                        <div class="stat-icon-wrapper chang-icon"><i data-lucide="git-compare"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-val" id="statChanges">0</span>
+                            <span class="stat-label">Changes</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" data-filter="breaking">
+                        <div class="stat-icon-wrapper break-icon"><i data-lucide="alert-octagon"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-val" id="statBreaking">0</span>
+                            <span class="stat-label">Breaking / Issues</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Search and Filter Bar -->
+            <section class="filters-bar glass-panel">
+                <div class="search-box">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search updates (e.g. Gemini, external tables)...">
+                </div>
+                <div class="filter-pills-container">
+                    <span class="filter-pill active" data-filter="all">All Updates</span>
+                    <span class="filter-pill" data-filter="Feature"><i data-lucide="sparkles"></i> Features</span>
+                    <span class="filter-pill" data-filter="Change"><i data-lucide="git-compare"></i> Changes</span>
+                    <span class="filter-pill" data-filter="Announcement"><i data-lucide="megaphone"></i> Announcements</span>
+                    <span class="filter-pill" data-filter="Breaking"><i data-lucide="alert-octagon"></i> Breaking</span>
+                    <span class="filter-pill" data-filter="Issue"><i data-lucide="alert-triangle"></i> Issues</span>
+                </div>
+            </section>
+
+            <!-- Feed Section -->
+            <section class="feed-section">
+                <!-- Loading State Skeleton -->
+                <div class="loading-state" id="loadingState">
+                    <div class="skeleton-entry">
+                        <div class="skeleton-date"></div>
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                    </div>
+                    <div class="skeleton-entry">
+                        <div class="skeleton-date"></div>
+                        <div class="skeleton-card"></div>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div class="error-state hidden" id="errorState">
+                    <i data-lucide="cloud-off" class="error-icon"></i>
+                    <h3>Failed to Fetch Release Notes</h3>
+                    <p id="errorMessage">We encountered an issue connecting to the Google Cloud release feed. Please try again.</p>
+                    <button class="btn btn-secondary" id="btnRetry">
+                        <i data-lucide="refresh-cw"></i> Try Again
+                    </button>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state hidden" id="emptyState">
+                    <i data-lucide="inbox" class="empty-icon"></i>
+                    <h3>No Updates Found</h3>
+                    <p>No release notes match your search query or selected filter.</p>
+                    <button class="btn btn-secondary" id="btnClearFilters">Clear Filters</button>
+                </div>
+
+                <!-- Actual Feed Updates Container -->
+                <div class="feed-container" id="feedContainer">
+                    <!-- Javascript will inject entries here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Alert Toast -->
+    <div id="toast" class="toast hidden">
+        <i data-lucide="check-circle" id="toastIcon"></i>
+        <span id="toastMsg">Action completed!</span>
+    </div>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+    <!-- Script -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
